@@ -336,5 +336,70 @@ def main():
             ops += batch_size
 
 
-if __name__ == '__main__':
-    main()
+def main2():
+    batch_size = 32
+    netT = SimpleConvNet().cuda()
+    print(netT)
+
+    optimT = optim.Adam(netT.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
+
+    cifar_train, cifar_test = load_cifar()
+    best_test_acc, best_test_loss = 0.0, np.inf
+
+    ops = 0
+    start_time = time.time()
+    for epoch in range(1000):
+        for batch_idx, (data, target) in enumerate(cifar_train):
+            data, target = data.cuda(), target.cuda()
+            netT.zero_grad()
+            x = netT(data)
+            correct, loss = grade(x, target, val=True)
+
+            loss.backward()
+
+            optimT.step()
+            loss = loss.item()
+
+            with torch.no_grad():
+                """ Update Statistics """
+                if batch_idx % 200 == 0:
+                    acc = correct / 1
+                    ops_per_sec = ops//(time.time() - start_time)
+                    print("*"*70)
+                    print("{}/{} Acc: {}, T Loss: {}".format(epoch,batch_idx, acc, loss))
+                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss, best_test_acc))
+
+            ops += batch_size
+
+        with torch.no_grad():
+            test_acc = 0.0
+            test_loss = 0.0
+            total_correct = 0.0
+            for i, (data, y) in enumerate(cifar_test):
+                data, y = data.cuda(), y.cuda()
+                x = netT(data)
+                correct, loss = grade(x, y, val=True)
+
+                test_acc += correct.item()
+                total_correct += correct.item()
+                test_loss += loss.item()
+
+            test_loss /= len(cifar_test.dataset)
+            test_acc /= len(cifar_test.dataset)
+
+            print(
+                "Test Accuracy: {}, Test Loss: {},  ({}/{})".format(
+                    test_acc, test_loss, total_correct, len(cifar_test.dataset)
+                )
+            )
+
+            if test_loss < best_test_loss or test_acc > best_test_acc:
+                print("==> new best stats, saving")
+                if test_loss < best_test_loss:
+                    best_test_loss = test_loss
+                if test_acc > best_test_acc:
+                    best_test_acc = test_acc
+
+
+# if __name__ == '__main__':
+#     main()
