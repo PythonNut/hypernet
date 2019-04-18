@@ -174,12 +174,12 @@ class HyperNet(nn.Module):
 
         # So the parameters aren't marked as autograd leaves
         tnet = deepcopy(self.th.tnet)
-        # freeze_params([tnet])
+        freeze_params([tnet])
 
         # Write parameters into tnet
-        with torch.no_grad():
-            for name, param in tnet.named_parameters():
-                param.copy_(w[name])
+        # with torch.no_grad():
+        for name, param in tnet.named_parameters():
+            param.copy_(w[name])
 
         return q, w, tnet
 
