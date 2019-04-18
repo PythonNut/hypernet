@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
+import time
 
 
 from torch import nn
@@ -248,6 +249,8 @@ def main():
     x_dist = create_d(ze)
     z_dist = create_d(z)
 
+    ops = 0
+    start_time = time.time()
     for epoch in range(1000):
         for batch_idx, (data, target) in enumerate(cifar_train):
             data, target = data.cuda(), target.cuda()
@@ -293,9 +296,10 @@ def main():
                 """ Update Statistics """
                 if batch_idx % 50 == 0:
                     acc = correct / 1
+                    ops_per_sec = ops//(time.time() - start_time)
                     print("*"*70)
                     print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss, d_loss))
-                    print("best test loss: {}, best test acc: {}".format(best_test_loss, best_test_acc))
+                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss, best_test_acc))
                     # print("**************************************")
 
                 if batch_idx > 1 and batch_idx % 199 == 0:
@@ -328,6 +332,8 @@ def main():
                             best_test_loss = test_loss
                         if test_acc > best_test_acc:
                             best_test_acc = test_acc
+
+            ops += batch_size
 
 
 if __name__ == '__main__':
