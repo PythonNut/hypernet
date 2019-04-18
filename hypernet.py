@@ -13,6 +13,8 @@ from torch.nn import functional as F
 from util import *
 from copy import deepcopy
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 class SimpleLinearNet(nn.Module):
     def __init__(
         self,
@@ -197,7 +199,7 @@ def grade(x, target, val=False):
 
 def eval_clf(Z, data):
     """ calc classifier loss """
-    data = data.cuda()
+    data = data.to(device)
     x = F.relu(F.conv2d(data, Z[0]))
     x = F.max_pool2d(x, 2, 2)
     x = F.relu(F.conv2d(x, Z[1]))
@@ -214,9 +216,9 @@ def main():
     z = 256
     ze = 512
     batch_size = 32
-    netT = SimpleConvNet().cuda()
-    netH = HyperNet(netT, ze, z).cuda()
-    netD = SimpleLinearNet([256, 1024, 1024, 1024, 1], final_sigmoid=True).cuda()
+    netT = SimpleConvNet().to(device)
+    netH = HyperNet(netT, ze, z).to(device)
+    netD = SimpleLinearNet([256, 1024, 1024, 1024, 1], final_sigmoid=True).to(device)
 
     print(netT, netH, netD)
 
@@ -253,17 +255,17 @@ def main():
     start_time = time.time()
     for epoch in range(1000):
         for batch_idx, (data, target) in enumerate(cifar_train):
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(device), target.to(device)
             netH.zero_grad()
             netD.zero_grad()
-            z = sample_d(x_dist, batch_size)
+            z = sample_d(x_dist, batch_size).to(device)
             q, w, netT = netH(z)
 
             # Z Adversary
             free_params([netD])
             freeze_params([netH])
             for code in q:
-                noise = sample_d(z_dist, batch_size)
+                noise = sample_d(z_dist, batch_size).to(device)
                 d_real = netD(noise)
                 d_fake = netD(code)
                 d_real_loss = -1 * torch.log((1 - d_real).mean())
@@ -307,8 +309,8 @@ def main():
                     test_loss = 0.0
                     total_correct = 0.0
                     for i, (data, y) in enumerate(cifar_test):
-                        data, y = data.cuda(), y.cuda()
-                        z = sample_d(x_dist, batch_size)
+                        data, y = data.to(device), y.to(device)
+                        z = sample_d(x_dist, batch_size).to(device)
                         _, _, netT = netH(z)
                         x = netT(data)
                         correct, loss = grade(x, y, val=True)
@@ -338,7 +340,7 @@ def main():
 
 def main2():
     batch_size = 32
-    netT = SimpleConvNet().cuda()
+    netT = SimpleConvNet().to(device)
     print(netT)
 
     optimT = optim.Adam(netT.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
@@ -350,7 +352,7 @@ def main2():
     start_time = time.time()
     for epoch in range(1000):
         for batch_idx, (data, target) in enumerate(cifar_train):
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(device), target.to(device)
             netT.zero_grad()
             x = netT(data)
             correct, loss = grade(x, target, val=True)
@@ -376,7 +378,7 @@ def main2():
             test_loss = 0.0
             total_correct = 0.0
             for i, (data, y) in enumerate(cifar_test):
-                data, y = data.cuda(), y.cuda()
+                data, y = data.to(device), y.to(device)
                 x = netT(data)
                 correct, loss = grade(x, y, val=True)
 

@@ -44,7 +44,7 @@ def create_d(shape):
 
 
 def sample_d(D, shape, scale=1.0, grad=True):
-    z = scale * D.sample((shape,)).cuda()
+    z = scale * D.sample((shape,))
     z.requires_grad = grad
     return z
 
