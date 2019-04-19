@@ -84,6 +84,7 @@ class SimpleConvNet(nn.Module):
         channels=[3, 16, 32, 32],
         linears=[64, 10],
         kernel_size=3,
+        bias=True
     ):
         super().__init__()
         if len(channels) < 2:
@@ -97,7 +98,7 @@ class SimpleConvNet(nn.Module):
         for i in range(len(channels) - 1):
             # TODO: Allow more flexibility for conv2d and maxpool2d
             modules[f"conv{i+1}"] = nn.Conv2d(
-                channels[i], channels[i + 1], kernel_size, bias=True
+                channels[i], channels[i + 1], kernel_size, bias=bias
             )
             x += -kernel_size + 1
             y += -kernel_size + 1
@@ -108,11 +109,11 @@ class SimpleConvNet(nn.Module):
 
         total_outputs = x * y * channels[-1]
 
-        modules["linear1"] = nn.Linear(total_outputs, linears[0], bias=True)
+        modules["linear1"] = nn.Linear(total_outputs, linears[0], bias=bias)
         for i in range(len(linears) - 1):
             relu_index = len(channels) + i
             modules[f"relu{relu_index}"] = relu
-            modules[f"linear{i+2}"] = nn.Linear(linears[i], linears[i + 1], bias=True)
+            modules[f"linear{i+2}"] = nn.Linear(linears[i], linears[i + 1], bias=bias)
 
         for key, module in modules.items():
             self.add_module(key, module)
