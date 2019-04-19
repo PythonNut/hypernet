@@ -299,7 +299,10 @@ def main():
                 """ Update Statistics """
                 if batch_idx % 50 == 0:
                     acc = correct / 1
-                    ops_per_sec = ops//(time.time() - start_time)
+                    current_time = time.time()
+                    ops_per_sec = ops//(current_time - start_time)
+                    start_time = current_time
+                    ops = 0
                     print("*"*70)
                     print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss, d_loss))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss, best_test_acc))
