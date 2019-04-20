@@ -59,3 +59,16 @@ def freeze_params(nets):
     for module in nets:
         for p in module.parameters():
             p.requires_grad = False
+
+# Just some helpers to inspect the parameter shapes of a network
+def param_count(net):
+    return sum(p.numel() for p in net.parameters())
+
+def param_size_max(net):
+    return max(p.numel() for p in net.parameters())
+
+def param_shapes(net):
+    return [(k, p.shape) for k, p in net.named_parameters()]
+
+def param_sizes(net):
+    return [(k, p.shape.numel()) for k, p in net.named_parameters()]

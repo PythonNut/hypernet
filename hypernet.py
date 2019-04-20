@@ -222,6 +222,9 @@ def main():
     netD = SimpleLinearNet([256, 1024, 1024, 1024, 1], final_sigmoid=True).to(device)
 
     print(netT, netH, netD)
+    print(f"netT params: {param_count(netT)}")
+    print(f"netH params: {param_count(netH)}")
+    print(f"netD params: {param_count(netD)}")
 
     # optimH = optim.Adam(netH.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
 
