@@ -9,6 +9,7 @@ import time
 from torch import nn
 from torch import optim
 from torch.nn import functional as F
+import torch.distributions.normal as N
 
 from util import *
 from copy import deepcopy
@@ -214,7 +215,7 @@ def eval_clf(Z, data):
 
 
 def main():
-    z = 256
+    zq = 256
     ze = 512
     batch_size = 32
     netT = SimpleConvNet().to(device)
@@ -250,10 +251,14 @@ def main():
     optimD = optim.Adam(netD.parameters(), lr=5e-5, betas=(0.5, 0.9), weight_decay=1e-4)
 
     cifar_train, cifar_test = load_cifar()
+    print(f"Minibatches: {len(cifar_train)}")
+
     best_test_acc, best_test_loss = 0.0, np.inf
 
     x_dist = create_d(ze)
-    z_dist = create_d(z)
+    z_dist = create_d(zq)
+
+    D = N.Normal(0, 1)
 
     ops = 0
     start_time = time.time()
@@ -262,14 +267,18 @@ def main():
             data, target = data.to(device), target.to(device)
             netH.zero_grad()
             netD.zero_grad()
-            z = sample_d(x_dist, batch_size).to(device)
+            # z = sample_d(x_dist, (batch_size,)).to(device)
+            # z = sample_d(D, (batch_size, ze)).to(device)
+            z = fast_randn((batch_size, ze), device=device, requires_grad=True)
             q, w, netT = netH(z)
 
             # Z Adversary
             free_params([netD])
             freeze_params([netH])
             for code in q:
-                noise = sample_d(z_dist, batch_size).to(device)
+                # noise = sample_d(z_dist, (batch_size,)).to(device)
+                # noise = sample_d(D, (batch_size, zq)).to(device)
+                noise = fast_randn((batch_size, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
                 d_fake = netD(code)
                 d_real_loss = -1 * torch.log((1 - d_real).mean())
@@ -317,7 +326,9 @@ def main():
                     total_correct = 0.0
                     for i, (data, y) in enumerate(cifar_test):
                         data, y = data.to(device), y.to(device)
-                        z = sample_d(x_dist, batch_size).to(device)
+                        # z = sample_d(x_dist, (batch_size,)).to(device)
+                        # z = sample_d(D, (batch_size, ze)).to(device)
+                        z = fast_randn((batch_size, ze), device=device, requires_grad=True)
                         _, _, netT = netH(z)
                         x = netT(data)
                         correct, loss = grade(x, y, val=True)

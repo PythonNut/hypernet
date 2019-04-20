@@ -1,6 +1,6 @@
 import torch
 import torchvision
-import torch.distributions.multivariate_normal as N
+import torch.distributions.multivariate_normal as MN
 
 from torchvision import datasets, transforms
 
@@ -39,12 +39,12 @@ def load_cifar():
 def create_d(shape):
     mean = torch.zeros(shape)
     cov = torch.eye(shape)
-    D = N.MultivariateNormal(mean, cov)
+    D = MN.MultivariateNormal(mean, cov)
     return D
 
 
 def sample_d(D, shape, scale=1.0, grad=True):
-    z = scale * D.sample((shape,))
+    z = scale * D.sample(shape)
     z.requires_grad = grad
     return z
 
@@ -59,6 +59,15 @@ def freeze_params(nets):
     for module in nets:
         for p in module.parameters():
             p.requires_grad = False
+
+
+def fast_randn(shape, *, requires_grad=False, **kwargs):
+    # Creating the tensor on the GPU seems faster
+    q = torch.zeros(shape, dtype=torch.float32, **kwargs)
+    q = q.normal_(0, 1)
+    if requires_grad:
+        q.requires_grad = True
+    return q
 
 # Just some helpers to inspect the parameter shapes of a network
 def param_count(net):
