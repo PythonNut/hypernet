@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 
 def load_cifar():
     path = "./data_c"
-    kwargs = {"num_workers": 2, "pin_memory": True, "drop_last": True}
+    kwargs = {"num_workers": 4, "pin_memory": True, "drop_last": True}
     transform_train = transforms.Compose(
         [
             transforms.RandomCrop(32, padding=4),
