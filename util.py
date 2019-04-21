@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torchvision
 import torch.distributions.multivariate_normal as MN
@@ -81,3 +82,47 @@ def param_shapes(net):
 
 def param_sizes(net):
     return [(k, p.shape.numel()) for k, p in net.named_parameters()]
+
+class ExtremaMeter(object):
+    def __init__(self, maximum=False):
+        self.maximum = maximum
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+
+        if self.maximum:
+            self.extrema = 0
+        else:
+            self.extrema = np.inf
+
+    def update(self, val):
+        self.val = val
+
+        if self.maximum:
+            if val > self.extrema:
+                self.extrema = val
+                return True
+
+        else:
+            if val < self.extrema:
+                self.extrema = val
+                return True
+
+        return False
+
+class MaxMeter(ExtremaMeter):
+    def __init__(self):
+        super().__init__(True)
+
+    @property
+    def max(self):
+        return self.extrema
+
+class MinMeter(ExtremaMeter):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def min(self):
+        return self.extrema

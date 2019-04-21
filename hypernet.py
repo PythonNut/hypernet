@@ -84,7 +84,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
     cifar_train, cifar_test = load_cifar()
     print(f"Minibatches: {len(cifar_train)}")
 
-    best_test_acc, best_test_loss = 0.0, np.inf
+    best_test_acc, best_test_loss = MaxMeter(), MinMeter()
 
     x_dist = create_d(ze)
     z_dist = create_d(zq)
@@ -119,6 +119,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
                 d_loss = d_real_loss + d_fake_loss
 
             optimD.step()
+
+            # Train the generator
             freeze_params([netD])
             free_params([netH])
 
@@ -148,7 +150,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
                     ops = 0
                     print("*"*70)
                     print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss, d_loss))
-                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss, best_test_acc))
+                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
                     # print("**************************************")
 
                 if batch_idx > 1 and batch_idx % 199 == 0:
@@ -177,12 +179,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
                         )
                     )
 
-                    if test_loss < best_test_loss or test_acc > best_test_acc:
+                    if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")
-                        if test_loss < best_test_loss:
-                            best_test_loss = test_loss
-                        if test_acc > best_test_acc:
-                            best_test_acc = test_acc
 
             ops += batch_size
 
@@ -194,7 +192,7 @@ def train_standard(batch_size=32, outdir=None, **kwargs):
     optimT = optim.Adam(netT.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
 
     cifar_train, cifar_test = load_cifar()
-    best_test_acc, best_test_loss = 0.0, np.inf
+    best_test_acc, best_test_loss = MaxMeter(), MinMeter()
 
     ops = 0
     start_time = time.time()
@@ -217,7 +215,7 @@ def train_standard(batch_size=32, outdir=None, **kwargs):
                     ops_per_sec = ops//(time.time() - start_time)
                     print("*"*70)
                     print("{}/{} Acc: {}, T Loss: {}".format(epoch,batch_idx, acc, loss))
-                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss, best_test_acc))
+                    print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
 
             ops += batch_size
 
@@ -243,12 +241,8 @@ def train_standard(batch_size=32, outdir=None, **kwargs):
                 )
             )
 
-            if test_loss < best_test_loss or test_acc > best_test_acc:
+            if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                 print("==> new best stats, saving")
-                if test_loss < best_test_loss:
-                    best_test_loss = test_loss
-                if test_acc > best_test_acc:
-                    best_test_acc = test_acc
 
 
 def main():
