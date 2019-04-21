@@ -205,6 +205,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                     sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
                     sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
 
+                    sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
+
                     if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")
                         torch.save(
