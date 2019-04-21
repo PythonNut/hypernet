@@ -36,21 +36,6 @@ def grade(x, target, val=False):
     return (correct, loss)
 
 
-def eval_clf(Z, data):
-    """ calc classifier loss """
-    data = data.to(device)
-    x = F.relu(F.conv2d(data, Z[0]))
-    x = F.max_pool2d(x, 2, 2)
-    x = F.relu(F.conv2d(x, Z[1]))
-    x = F.max_pool2d(x, 2, 2)
-    x = F.relu(F.conv2d(x, Z[2]))
-    x = F.max_pool2d(x, 2, 2)
-    x = x.view(x.size(0), -1)
-    x = F.relu(F.linear(x, Z[3]))
-    x = F.linear(x, Z[4])
-    return x
-
-
 def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
     tensorboard_path = Path(outdir) / 'tensorboard' / name
     model_path = Path(outdir) / 'models' / name
