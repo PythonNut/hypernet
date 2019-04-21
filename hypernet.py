@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import time
 import argparse
+from pathlib import Path
 
 from torch import nn
 from torch import optim
@@ -17,7 +18,8 @@ def load_args():
     parser.add_argument('--ze', default=512, type=int, help='encoder dimension')
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--epochs', default=200000, type=int)
-    parser.add_argument('-o', '--outdir', type=str)
+    parser.add_argument('-n', '--name', default="test", type=str)
+    parser.add_argument('-o', '--outdir', default=".", type=str)
 
     args = parser.parse_args()
     return args
@@ -48,7 +50,10 @@ def eval_clf(Z, data):
     return x
 
 
-def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
+def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
+    model_path = Path(outdir) / 'models' / name
+    model_path.mkdir(exist_ok=True, parents=True)
+
     netT = SimpleConvNet().to(device)
     netH = HyperNet(netT, ze, z).to(device)
     netD = SimpleLinearNet([256, 1024, 1024, 1024, 1], final_sigmoid=True).to(device)
@@ -181,6 +186,13 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
 
                     if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")
+                        torch.save(
+                            {
+                                'netH': netH.state_dict(),
+                                'netD': netD.state_dict()
+                            },
+                            str(model_path / 'best.pt')
+                        )
 
             ops += batch_size
 
