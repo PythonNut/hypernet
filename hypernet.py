@@ -8,6 +8,7 @@ from torch import nn
 from torch import optim
 from torch.nn import functional as F
 import torch.distributions.normal as N
+from tensorboardX import SummaryWriter
 
 from util import *
 from modules import *
@@ -51,8 +52,12 @@ def eval_clf(Z, data):
 
 
 def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
+    tensorboard_path = Path(outdir) / 'tensorboard' / name
     model_path = Path(outdir) / 'models' / name
+    tensorboard_path.mkdir(exist_ok=True, parents=True)
     model_path.mkdir(exist_ok=True, parents=True)
+
+    sw = SummaryWriter(str(tensorboard_path))
 
     netT = SimpleConvNet().to(device)
     netH = HyperNet(netT, ze, z).to(device)
@@ -64,6 +69,9 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
     print(f"netD params: {param_count(netD)}")
 
     # optimH = optim.Adam(netH.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
+    sw.add_graph(netT, torch.zeros(batch_size, 3, 32, 32).cuda())
+    # sw.add_graph(netH, torch.zeros(batch_size, ze).cuda())
+    sw.add_graph(netD, torch.zeros(batch_size, zq).cuda())
 
     optimE = optim.Adam(
         netH.encoder.parameters(), lr=5e-3, betas=(0.5, 0.9), weight_decay=1e-4
@@ -87,9 +95,11 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
     optimD = optim.Adam(netD.parameters(), lr=5e-5, betas=(0.5, 0.9), weight_decay=1e-4)
 
     cifar_train, cifar_test = load_cifar()
-    print(f"Minibatches: {len(cifar_train)}")
+    minibatch_count = len(cifar_train)
+    print(f"Minibatches: {minibatch_count}")
 
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
+    g_loss_meter, d_loss_meter = AverageMeter(), AverageMeter()
 
     x_dist = create_d(ze)
     z_dist = create_d(zq)
@@ -99,7 +109,10 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
     ops = 0
     start_time = time.time()
     for epoch in range(1000):
+        d_loss_meter.reset()
+        g_loss_meter.reset()
         for batch_idx, (data, target) in enumerate(cifar_train):
+            n_iter = epoch * minibatch_count + batch_idx
             data, target = data.to(device), target.to(device)
             netH.zero_grad()
             netD.zero_grad()
@@ -122,6 +135,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                 d_real_loss.backward(retain_graph=True)
                 d_fake_loss.backward(retain_graph=True)
                 d_loss = d_real_loss + d_fake_loss
+                d_loss_meter.update(d_loss.item())
 
             optimD.step()
 
@@ -132,6 +146,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
             x = netT(data)
             # x = eval_clf(list(w.values()), data)
             correct, loss = grade(x, target, val=True)
+            g_loss_meter.update(loss.item())
 
             # Retain graph because the generators enter the encoder multiple times
             loss.backward()
@@ -143,7 +158,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
             optimW3.step()
             optimW4.step()
             optimW5.step()
-            loss = loss.item()
 
             with torch.no_grad():
                 """ Update Statistics """
@@ -154,7 +168,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                     start_time = current_time
                     ops = 0
                     print("*"*70)
-                    print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss, d_loss))
+                    print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss.item(), d_loss))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
                     # print("**************************************")
 
@@ -183,6 +197,11 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                             test_acc, test_loss, total_correct, len(cifar_test.dataset)
                         )
                     )
+
+                    sw.add_scalar('T/loss', test_loss, n_iter)
+                    sw.add_scalar('T/acc', test_acc, n_iter)
+                    sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
+                    sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
 
                     if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")

@@ -86,6 +86,33 @@ def param_shapes(net):
 def param_sizes(net):
     return [(k, p.shape.numel()) for k, p in net.named_parameters()]
 
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+
+    @property
+    def avg(self):
+        if self.count == 0:
+            if self.sum == 0:
+                return 0
+            else:
+                return np.sign(self.sum) * np.inf
+
+        else:
+            return self.sum / self.count
+
+
 class ExtremaMeter(object):
     def __init__(self, maximum=False):
         self.maximum = maximum
