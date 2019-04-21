@@ -172,6 +172,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
                     # print("**************************************")
 
+                ops += batch_size
+
                 if batch_idx > 1 and batch_idx % 199 == 0:
                     test_acc = 0.0
                     test_loss = 0.0
@@ -213,7 +215,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                             str(model_path / 'best.pt')
                         )
 
-            ops += batch_size
 
 
 def train_standard(batch_size=32, outdir=None, **kwargs):
