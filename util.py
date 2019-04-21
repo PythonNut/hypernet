@@ -74,6 +74,9 @@ def fast_randn(shape, *, requires_grad=False, **kwargs):
 def param_count(net):
     return sum(p.numel() for p in net.parameters())
 
+def param_layer_count(net):
+    return len(list(net.parameters()))
+
 def param_size_max(net):
     return max(p.numel() for p in net.parameters())
 

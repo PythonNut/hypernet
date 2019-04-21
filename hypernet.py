@@ -188,6 +188,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
 def train_standard(batch_size=32, outdir=None, **kwargs):
     netT = SimpleConvNet().to(device)
     print(netT)
+    print(f"netT layers: {param_layer_count(netT)}")
+    print(f"netT params: {param_count(netT)}")
 
     optimT = optim.Adam(netT.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
 
