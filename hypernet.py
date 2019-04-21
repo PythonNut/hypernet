@@ -1,8 +1,7 @@
-
 import numpy as np
 import torch
 import time
-
+import argparse
 
 from torch import nn
 from torch import optim
@@ -11,6 +10,17 @@ import torch.distributions.normal as N
 
 from util import *
 from modules import *
+
+def load_args():
+    parser = argparse.ArgumentParser(description='param-hypernet')
+    parser.add_argument('--zq', default=256, type=int, help='latent space width')
+    parser.add_argument('--ze', default=512, type=int, help='encoder dimension')
+    parser.add_argument('--batch_size', default=32, type=int)
+    parser.add_argument('--epochs', default=200000, type=int)
+    parser.add_argument('-o', '--outdir', type=str)
+
+    args = parser.parse_args()
+    return args
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -38,10 +48,7 @@ def eval_clf(Z, data):
     return x
 
 
-def main():
-    zq = 256
-    ze = 512
-    batch_size = 32
+def train_gan(zq=256, ze=512, batch_size=32, outdir=None, **kwargs):
     netT = SimpleConvNet().to(device)
     netH = HyperNet(netT, ze, z).to(device)
     netD = SimpleLinearNet([256, 1024, 1024, 1024, 1], final_sigmoid=True).to(device)
@@ -180,8 +187,7 @@ def main():
             ops += batch_size
 
 
-def main2():
-    batch_size = 32
+def train_standard(batch_size=32, outdir=None, **kwargs):
     netT = SimpleConvNet().to(device)
     print(netT)
 
@@ -245,5 +251,9 @@ def main2():
                     best_test_acc = test_acc
 
 
-# if __name__ == '__main__':
-#     main()
+def main():
+    args = vars(load_args())
+    train_gan(**args)
+
+if __name__ == '__main__':
+    main()
