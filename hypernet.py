@@ -21,6 +21,8 @@ def load_args():
     parser.add_argument('--epochs', default=200000, type=int)
     parser.add_argument('-n', '--name', default="test", type=str)
     parser.add_argument('-o', '--outdir', default=".", type=str)
+    parser.add_argument('-s', '--standard', action="store_true")
+    parser.add_argument('--dry', action="store_true")
 
     args = parser.parse_args()
     return args
@@ -36,13 +38,14 @@ def grade(x, target, val=False):
     return (correct, loss)
 
 
-def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
-    tensorboard_path = Path(outdir) / 'tensorboard' / name
-    model_path = Path(outdir) / 'models' / name
-    tensorboard_path.mkdir(exist_ok=True, parents=True)
-    model_path.mkdir(exist_ok=True, parents=True)
+def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, **kwargs):
+    if not dry:
+        tensorboard_path = Path(outdir) / 'tensorboard' / name
+        model_path = Path(outdir) / 'models' / name
+        tensorboard_path.mkdir(exist_ok=True, parents=True)
+        model_path.mkdir(exist_ok=True, parents=True)
 
-    sw = SummaryWriter(str(tensorboard_path))
+        sw = SummaryWriter(str(tensorboard_path))
 
     netT = SimpleConvNet().to(device)
     netH = HyperNet(netT, ze, z).to(device)
@@ -52,11 +55,12 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
     print(f"netT params: {param_count(netT)}")
     print(f"netH params: {param_count(netH)}")
     print(f"netD params: {param_count(netD)}")
+    generator_count = param_layer_count(netT)
 
     # optimH = optim.Adam(netH.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
-    sw.add_graph(netT, torch.zeros(batch_size, 3, 32, 32).cuda())
+    if not dry:
+        sw.add_graph(netT, torch.zeros(batch_size, 3, 32, 32).cuda())
     # sw.add_graph(netH, torch.zeros(batch_size, ze).cuda())
-    sw.add_graph(netD, torch.zeros(batch_size, zq).cuda())
 
     optimE = optim.Adam(
         netH.encoder.parameters(), lr=5e-3, betas=(0.5, 0.9), weight_decay=1e-4
@@ -185,27 +189,35 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", **kwargs):
                         )
                     )
 
-                    sw.add_scalar('T/loss', test_loss, n_iter)
-                    sw.add_scalar('T/acc', test_acc, n_iter)
-                    sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
-                    sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
+                    if not dry:
+                        sw.add_scalar('T/loss', test_loss, n_iter)
+                        sw.add_scalar('T/acc', test_acc, n_iter)
+                        sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
+                        sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
+                        sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
-                    sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
                     if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")
-                        torch.save(
-                            {
-                                'netH': netH.state_dict(),
-                                'netD': netD.state_dict()
-                            },
-                            str(model_path / 'best.pt')
-                        )
+                        if not dry:
+                            torch.save(
+                                {
+                                    'netH': netH.state_dict(),
+                                    'netD': netD.state_dict()
+                                },
+                                str(model_path / 'best.pt')
+                            )
 
 
 
-def train_standard(batch_size=32, outdir=None, **kwargs):
-    netT = SimpleConvNet().to(device)
+def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
+    tensorboard_path = Path(outdir) / 'tensorboard' / name
+    model_path = Path(outdir) / 'models' / name
+    tensorboard_path.mkdir(exist_ok=True, parents=True)
+    model_path.mkdir(exist_ok=True, parents=True)
+
+    sw = SummaryWriter(str(tensorboard_path))
+
     print(netT)
     print(f"netT layers: {param_layer_count(netT)}")
     print(f"netT params: {param_count(netT)}")
@@ -213,6 +225,7 @@ def train_standard(batch_size=32, outdir=None, **kwargs):
     optimT = optim.Adam(netT.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
 
     cifar_train, cifar_test = load_cifar()
+    minibatch_count = len(cifar_train)
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
 
     ops = 0
@@ -262,13 +275,20 @@ def train_standard(batch_size=32, outdir=None, **kwargs):
                 )
             )
 
+            sw.add_scalar('T/loss', test_loss, n_iter)
+            sw.add_scalar('T/acc', test_acc, n_iter)
+            sw.add_scalar('T/lr', optimT.param_groups[0]['lr'], n_iter)
+
             if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                 print("==> new best stats, saving")
 
 
 def main():
     args = vars(load_args())
-    train_gan(**args)
+    if args['standard']:
+        train_standard(**args)
+    else:
+        train_gan(**args)
 
 if __name__ == '__main__':
     main()
