@@ -14,6 +14,7 @@ class SimpleLinearNet(nn.Module):
             final_relu=False,
             name=None,
             final_sigmoid=False,
+            batchnorm=True
     ):
         super().__init__()
         if len(sizes) < 2:
@@ -23,7 +24,8 @@ class SimpleLinearNet(nn.Module):
         relu = nn.LeakyReLU(inplace=True)
 
         for i in range(1, len(sizes) - 1):
-            modules[f"bn{i}"] = nn.BatchNorm1d(sizes[i])
+            if batchnorm:
+                modules[f"bn{i}"] = nn.BatchNorm1d(sizes[i])
             modules[f"relu{i}"] = relu
             modules[f"linear{i+1}"] = nn.Linear(sizes[i], sizes[i + 1])
 
