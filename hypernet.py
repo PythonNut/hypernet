@@ -224,15 +224,18 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
     cifar_train, cifar_test = load_cifar()
     minibatch_count = len(cifar_train)
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
+    t_loss_meter = AverageMeter()
 
     ops = 0
     start_time = time.time()
     for epoch in range(1000):
         for batch_idx, (data, target) in enumerate(cifar_train):
+            n_iter = epoch * minibatch_count + batch_idx
             data, target = data.to(device), target.to(device)
             netT.zero_grad()
             x = netT(data)
             correct, loss = grade(x, target, val=True)
+            t_loss_meter.update(loss.item())
 
             loss.backward()
 
