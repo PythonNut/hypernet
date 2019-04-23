@@ -240,7 +240,6 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
             loss.backward()
 
             optimT.step()
-            loss = loss.item()
 
             with torch.no_grad():
                 """ Update Statistics """
@@ -248,7 +247,7 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
                     acc = correct / 1
                     ops_per_sec = ops//(time.time() - start_time)
                     print("*"*70 + " " + name)
-                    print("{}/{} Acc: {}, T Loss: {}".format(epoch,batch_idx, acc, loss))
+                    print("{}/{} Acc: {}, T Loss: {}".format(epoch,batch_idx, acc, loss.item()))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
 
             ops += batch_size
