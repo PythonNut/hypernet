@@ -105,8 +105,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             data, target = data.to(device), target.to(device)
             netH.zero_grad()
             netD.zero_grad()
-            # z = sample_d(x_dist, (batch_size,)).to(device)
-            # z = sample_d(D, (batch_size, ze)).to(device)
             z = fast_randn((batch_size, ze), device=device, requires_grad=True)
             q, w, netT = netH(z)
 
@@ -114,8 +112,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             free_params([netD])
             freeze_params([netH])
             for code in q:
-                # noise = sample_d(z_dist, (batch_size,)).to(device)
-                # noise = sample_d(D, (batch_size, zq)).to(device)
                 noise = fast_randn((batch_size, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
                 d_fake = netD(code)
@@ -133,7 +129,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             free_params([netH])
 
             x = netT(data)
-            # x = eval_clf(list(w.values()), data)
             correct, loss = grade(x, target, val=True)
             g_loss_meter.update(loss.item())
 
@@ -169,8 +164,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                     total_correct = 0.0
                     for i, (data, y) in enumerate(cifar_test):
                         data, y = data.to(device), y.to(device)
-                        # z = sample_d(x_dist, (batch_size,)).to(device)
-                        # z = sample_d(D, (batch_size, ze)).to(device)
                         z = fast_randn((batch_size, ze), device=device, requires_grad=True)
                         _, _, netT = netH(z)
                         x = netT(data)
