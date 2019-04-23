@@ -155,7 +155,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                     ops_per_sec = ops//(current_time - start_time)
                     start_time = current_time
                     ops = 0
-                    print("*"*70)
+                    print("*"*70 + " " + name)
                     print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss.item(), d_loss))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
                     # print("**************************************")
@@ -247,7 +247,7 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
                 if batch_idx % 200 == 0:
                     acc = correct / 1
                     ops_per_sec = ops//(time.time() - start_time)
-                    print("*"*70)
+                    print("*"*70 + " " + name)
                     print("{}/{} Acc: {}, T Loss: {}".format(epoch,batch_idx, acc, loss))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
 
