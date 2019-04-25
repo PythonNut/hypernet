@@ -94,11 +94,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
     g_loss_meter, d_loss_meter = AverageMeter(), AverageMeter()
 
-    x_dist = create_d(ze)
-    z_dist = create_d(zq)
-
-    D = N.Normal(0, 1)
-
     ops = 0
     start_time = time.time()
     for epoch in range(1000):
