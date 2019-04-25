@@ -116,7 +116,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             free_params([netD])
             freeze_params([netH])
             for code in q:
-                noise = fast_randn((batch_size, zq), device=device, requires_grad=True)
+                noise = fast_randn((generator_count, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
                 d_fake = netD(code)
                 d_real_loss = -1 * torch.log((1 - d_real).mean())
