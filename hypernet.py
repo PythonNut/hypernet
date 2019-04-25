@@ -93,12 +93,14 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
 
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
     g_loss_meter, d_loss_meter = AverageMeter(), AverageMeter()
+    d_acc_meter = AverageMeter()
 
     ops = 0
     start_time = time.time()
     for epoch in range(1000):
         d_loss_meter.reset()
         g_loss_meter.reset()
+        d_acc_meter.reset()
         for batch_idx, (data, target) in enumerate(cifar_train):
             n_iter = epoch * minibatch_count + batch_idx
             data, target = data.to(device), target.to(device)
@@ -114,6 +116,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                 noise = fast_randn((generator_count, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
                 d_fake = netD(code)
+                d_acc_meter.update((sum(d_real < 0.5) + sum(d_fake > 0.5)).item()/(generator_count * 2))
                 d_real_loss = -1 * torch.log((1 - d_real).mean())
                 d_fake_loss = -1 * torch.log(d_fake.mean())
                 d_real_loss.backward(retain_graph=True)
@@ -186,6 +189,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         sw.add_scalar('T/acc', test_acc, n_iter)
                         sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
                         sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
+                        sw.add_scalar('D/acc', d_acc_meter.avg, n_iter)
                         sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
 
