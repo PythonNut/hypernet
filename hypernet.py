@@ -103,7 +103,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
         d_acc_meter.reset()
         for batch_idx, (data, target) in enumerate(cifar_train):
             n_iter = epoch * minibatch_count + batch_idx
-            data, target = data.to(device), target.to(device)
+            data = data.to(device, non_blocking=True)
+            target = target.to(device, non_blocking=True)
             netH.zero_grad()
             netD.zero_grad()
             z = fast_randn((batch_size, ze), device=device, requires_grad=True)
