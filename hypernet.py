@@ -170,7 +170,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                     test_loss = 0.0
                     total_correct = 0.0
                     for i, (data, y) in enumerate(cifar_test):
-                        data, y = data.to(device), y.to(device)
+                        data = data.to(device, non_blocking=True)
+                        y = y.to(device, non_blocking=True)
                         z = fast_randn((batch_size, ze), device=device, requires_grad=True)
                         _, _, netT = netH(z)
                         x = netT(data)
