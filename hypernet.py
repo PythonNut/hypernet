@@ -95,6 +95,10 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
     g_loss_meter, d_loss_meter = AverageMeter(), AverageMeter()
     d_acc_meter = AverageMeter()
 
+    adversarial_loss = nn.BCELoss()
+    real_label, fake_label = 0, 1
+    label = torch.zeros((generator_count, 1), device=device)
+
     ops = 0
     start_time = time.time()
     for epoch in range(1000):
@@ -116,11 +120,11 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             for code in q:
                 noise = fast_randn((generator_count, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
-                d_fake = netD(code)
+                d_fake = netD(code.detach())
                 d_acc_meter.update((sum(d_real < 0.5) + sum(d_fake > 0.5)).item()/(generator_count * 2))
-                d_real_loss = -1 * torch.log((1 - d_real).mean())
-                d_fake_loss = -1 * torch.log(d_fake.mean())
+                d_real_loss = adversarial_loss(d_real, label.fill_(real_label))
                 d_real_loss.backward(retain_graph=True)
+                d_fake_loss = adversarial_loss(d_fake, label.fill_(fake_label))
                 d_fake_loss.backward(retain_graph=True)
                 d_loss = d_real_loss + d_fake_loss
                 d_loss_meter.update(d_loss.item())
@@ -155,7 +159,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                     start_time = current_time
                     ops = 0
                     print("*"*70 + " " + name)
-                    print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss.item(), d_loss))
+                    print("{}/{} Acc: {}, G Loss: {}, D Loss: {}".format(epoch,batch_idx, acc, loss.item(), d_loss.item()))
                     print("{} ops/s, best test loss: {}, best test acc: {}".format(ops_per_sec, best_test_loss.min, best_test_acc.max))
                     # print("**************************************")
 
