@@ -131,6 +131,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             d_loss = d_real_loss + d_fake_loss
             dgrad_meter.update(model_grad_norm(netD))
             d_loss_meter.update(d_loss.item())
+            d_acc_meter.update((sum(d_real < 0.5) + sum(d_fake > 0.5)).item()/(generator_count * 2))
 
             optimD.step()
 
