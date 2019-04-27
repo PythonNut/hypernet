@@ -200,7 +200,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         netH_samples = [netH(fast_randn((1, 512)).cuda()) for _ in range(100)]
                         netH.train()
                         sw.add_scalar('G/g_var', torch.stack([torch.cat([v.view(-1) for v in s[1].values()]) for s in netH_samples]).var(0).mean(), n_iter)
-                        sw.add_scalar('G/q_var', torch.stack([s[0] for s in netH_samples]).view(100, -1).var(0).mean(), n_iter)
+                        sw.add_scalar('G/q_var', torch.cat([s[0].view(-1, zq) for s in netH_samples]).var(0).mean(), n_iter)
                         sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
 
