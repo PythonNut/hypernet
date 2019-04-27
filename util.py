@@ -70,6 +70,13 @@ def fast_randn(shape, *, requires_grad=False, **kwargs):
         q.requires_grad = True
     return q
 
+def model_grad_norm(model, p=2):
+    total_norm = 0
+    for param in model.parameters():
+        param_norm = param.grad.data.norm(p)
+        total_norm += param_norm.item() ** p
+    return total_norm ** (1. / p)
+
 # Just some helpers to inspect the parameter shapes of a network
 def param_count(net):
     return sum(p.numel() for p in net.parameters())
