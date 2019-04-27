@@ -117,10 +117,13 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             # Z Adversary
             free_params([netD])
             freeze_params([netH])
+            d_fakes = []
+
             for code in q:
                 noise = fast_randn((generator_count, zq), device=device, requires_grad=True)
                 d_real = netD(noise)
                 d_fake = netD(code.detach())
+                d_fakes.append(d_fake)
                 d_acc_meter.update((sum(d_real < 0.5) + sum(d_fake > 0.5)).item()/(generator_count * 2))
                 d_real_loss = adversarial_loss(d_real, label.fill_(real_label))
                 d_real_loss.backward(retain_graph=True)
@@ -140,7 +143,12 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             g_loss_meter.update(loss.item())
 
             # Retain graph because the generators enter the encoder multiple times
-            loss.backward()
+            loss.backward(retain_graph=True)
+
+            # fool the discriminator
+            for d_fake in d_fakes:
+                d_fake_loss = adversarial_loss(d_fake, label.fill_(real_label))
+                d_fake_loss.backward(retain_graph=True)
 
             # optimH.step()
             optimE.step()
