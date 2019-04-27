@@ -47,8 +47,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
 
         sw = SummaryWriter(str(tensorboard_path))
 
-    netT = SimpleConvNet().to(device)
-    netH = HyperNet(netT, ze, z).to(device)
+    netT = SimpleConvNet(bias=False).to(device)
+    netH = HyperNet(netT, ze, zq).to(device)
     netD = SimpleLinearNet(
         [256, 1024, 1024, 1024, 1],
         final_sigmoid=True,
