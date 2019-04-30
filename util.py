@@ -172,3 +172,32 @@ def clf_performance(x, target, val=False):
         pred = x.data.max(1, keepdim=True)[1]
         correct = pred.eq(target.data.view_as(pred)).long().cpu().sum()
     return (correct, loss)
+
+def eval_clf(netT, cifar_test, *, device='cpu'):
+    test_acc = 0.0
+    test_loss = 0.0
+    for i, (data, y) in enumerate(cifar_test):
+        data = data.to(device, non_blocking=True)
+        y = y.to(device, non_blocking=True)
+        # z = fast_randn((batch_size, ze), device=device, requires_grad=True)
+        # _, _, netT = netH(z)
+        x = netT(data)
+        correct, loss = clf_performance(x, y, val=True)
+
+        test_acc += correct.item()
+        test_loss += loss.item()
+
+    test_loss /= len(cifar_test.dataset)
+    test_acc /= len(cifar_test.dataset)
+    return test_loss, test_acc
+
+def make_ensemble(nets):
+    def clf(x):
+        return sum(F.softmax(net(x), dim=1) for net in nets)
+    return clf
+
+def sample_target_net(netH, batch_size=32, n=1):
+    nets = [netH(fast_randn((batch_size, netH.ze)))[2] for _ in range(n)]
+    if n == 1:
+        return nets[0]
+    return nets
