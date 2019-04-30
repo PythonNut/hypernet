@@ -29,13 +29,6 @@ def load_args():
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-def grade(x, target, val=False):
-    loss = F.cross_entropy(x, target)
-    correct = None
-    if val:
-        pred = x.data.max(1, keepdim=True)[1]
-        correct = pred.eq(target.data.view_as(pred)).long().cpu().sum()
-    return (correct, loss)
 
 
 def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, **kwargs):
@@ -140,7 +133,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             free_params([netH])
 
             x = netT(data)
-            correct, loss = grade(x, target, val=True)
+            correct, loss = clf_performance(x, target, val=True)
             g_loss_meter.update(loss.item())
 
             # Retain graph because the generators enter the encoder multiple times
@@ -183,7 +176,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         z = fast_randn((batch_size, ze), device=device, requires_grad=True)
                         _, _, netT = netH(z)
                         x = netT(data)
-                        correct, loss = grade(x, y, val=True)
+                        correct, loss = clf_performance(x, y, val=True)
 
                         test_acc += correct.item()
                         total_correct += correct.item()
@@ -253,7 +246,7 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
             data, target = data.to(device), target.to(device)
             netT.zero_grad()
             x = netT(data)
-            correct, loss = grade(x, target, val=True)
+            correct, loss = clf_performance(x, target, val=True)
             t_loss_meter.update(loss.item())
 
             loss.backward()
@@ -278,7 +271,7 @@ def train_standard(batch_size=32, outdir=".", name="tmp", **kwargs):
             for i, (data, y) in enumerate(cifar_test):
                 data, y = data.to(device), y.to(device)
                 x = netT(data)
-                correct, loss = grade(x, y, val=True)
+                correct, loss = clf_performance(x, y, val=True)
 
                 test_acc += correct.item()
                 total_correct += correct.item()

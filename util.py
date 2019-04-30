@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torchvision
 import torch.distributions.multivariate_normal as MN
+from torch.nn import functional as F
 
 from torchvision import datasets, transforms
 
@@ -163,3 +164,11 @@ class MinMeter(ExtremaMeter):
     @property
     def min(self):
         return self.extrema
+
+def clf_performance(x, target, val=False):
+    loss = F.cross_entropy(x, target)
+    correct = None
+    if val:
+        pred = x.data.max(1, keepdim=True)[1]
+        correct = pred.eq(target.data.view_as(pred)).long().cpu().sum()
+    return (correct, loss)
