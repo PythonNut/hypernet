@@ -166,7 +166,7 @@ class HyperNet(nn.Module):
         q = self.encoder(z)
         q = q.view(-1, self.gen_count, self.z)
         w = OrderedDict(
-            (key, self.generators[i](q[:, i]).mean(0).view(*shape))
+            (key, self.generators[i](q[:, i]).view(-1, *shape))
             for i, (key, shape) in zip(range(self.gen_count), self.shapes.items())
         )
 
@@ -177,6 +177,6 @@ class HyperNet(nn.Module):
         # Write parameters into tnet
         # with torch.no_grad():
         for name, param in tnet.named_parameters():
-            param.copy_(w[name])
+            param.copy_(w[name].mean(0))
 
         return q, w, tnet
