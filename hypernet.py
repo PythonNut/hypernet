@@ -55,9 +55,6 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
     generator_count = param_layer_count(netT)
 
     # optimH = optim.Adam(netH.parameters(), lr=5e-4, betas=(0.5, 0.9), weight_decay=1e-4)
-    if not dry:
-        sw.add_graph(netT, torch.zeros(batch_size, 3, 32, 32).cuda())
-    # sw.add_graph(netH, torch.zeros(batch_size, ze).cuda())
 
     optimE = optim.Adam(
         netH.encoder.parameters(), lr=5e-3, betas=(0.5, 0.9), weight_decay=1e-4
