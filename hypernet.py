@@ -22,6 +22,7 @@ def load_args():
     parser.add_argument('-n', '--name', default="test", type=str)
     parser.add_argument('-o', '--outdir', default=".", type=str)
     parser.add_argument('-s', '--standard', action="store_true")
+    parser.add_argument('--embeddings', action="store_true")
     parser.add_argument('--dry', action="store_true")
 
     args = parser.parse_args()
@@ -199,8 +200,9 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         netH.train()
                         sw.add_scalar('G/g_var', sum(x.std(0).mean() for v in netH_samples for x in v[1].values())/(generator_count * batch_size), n_iter)
                         sw.add_scalar('G/q_var', torch.cat([s[0].view(-1, zq) for s in netH_samples]).var(0).mean(), n_iter)
-                        sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
+                        if kwargs['embeddings']:
+                            sw.add_embedding(q.view(-1, zq), global_step=n_iter, tag="q", metadata=list(range(generator_count))*batch_size)
 
                     if best_test_loss.update(test_loss) | best_test_acc.update(test_acc):
                         print("==> new best stats, saving")
