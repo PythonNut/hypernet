@@ -2,8 +2,9 @@ import numpy as np
 import torch
 import torchvision
 import torch.distributions.multivariate_normal as MN
-from torch.nn import functional as F
+import torch.autograd as autograd
 
+from torch.nn import functional as F
 from torchvision import datasets, transforms
 
 def load_cifar():
@@ -67,6 +68,14 @@ def fast_randn(shape, *, requires_grad=False, **kwargs):
     # Creating the tensor on the GPU seems faster
     q = torch.zeros(shape, dtype=torch.float32, **kwargs)
     q = q.normal_(0, 1)
+    if requires_grad:
+        q.requires_grad = True
+    return q
+
+def fast_rand(shape, *, requires_grad=False, **kwargs):
+    # Creating the tensor on the GPU seems fasterplot
+    q = torch.zeros(shape, dtype=torch.float32, **kwargs)
+    q = q.uniform_(0, 1)
     if requires_grad:
         q.requires_grad = True
     return q
@@ -201,3 +210,27 @@ def sample_target_net(netH, batch_size=32, n=1):
     if n == 1:
         return nets[0]
     return nets
+
+def random_interpolate(data1, data2, *, device='cpu'):
+    batch_size = data1.shape[0]
+    alpha = fast_rand((batch_size, 1), device=device).expand(data1.shape)
+
+    interpolates = alpha * data1 + ((1 - alpha) * data2)
+    interpolates = autograd.Variable(interpolates, requires_grad=True)
+    return interpolates
+
+
+def calc_gradient_penalty(netD, input, c=1, *, device='cpu'):
+    disc = netD(input)
+
+    gradients = autograd.grad(
+        outputs=disc,
+        inputs=input,
+        grad_outputs=torch.ones_like(disc, device=device),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )[0]
+
+    gradient_penalty = ((gradients.norm(2, dim=1) - c) ** 2).mean()
+    return gradient_penalty
