@@ -197,7 +197,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         sw.add_scalar('D/acc', d_acc_meter.avg, n_iter)
                         sw.add_scalar('D/gradnorm', dgrad_meter.avg, n_iter)
                         netH.eval()
-                        netH_samples = [netH(fast_randn((batch_size, ze)).cuda()) for _ in range(100)]
+                        netH_samples = [netH(fast_randn((batch_size, ze)).cuda()) for _ in range(10)]
                         netH.train()
                         sw.add_scalar('G/g_var', sum(x.std(0).mean() for v in netH_samples for x in v[1].values())/(generator_count * batch_size), n_iter)
                         sw.add_scalar('G/q_var', torch.cat([s[0].view(-1, zq) for s in netH_samples]).var(0).mean(), n_iter)
