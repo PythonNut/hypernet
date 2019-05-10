@@ -121,3 +121,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+/tensorboard
+/models
+*.pt
+/data_c
