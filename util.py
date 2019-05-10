@@ -64,10 +64,10 @@ def freeze_params(nets):
             p.requires_grad = False
 
 
-def fast_randn(shape, *, requires_grad=False, **kwargs):
+def fast_randn(shape, mean=0, std=1, *, requires_grad=False, **kwargs):
     # Creating the tensor on the GPU seems faster
     q = torch.zeros(shape, dtype=torch.float32, **kwargs)
-    q = q.normal_(0, 1)
+    q = q.normal_(mean, std)
     if requires_grad:
         q.requires_grad = True
     return q
