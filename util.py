@@ -185,19 +185,41 @@ def clf_performance(x, target, val=False):
 def eval_clf(netT, cifar_test, *, device='cpu'):
     test_acc = 0.0
     test_loss = 0.0
+    test_count = 0
     for i, (data, y) in enumerate(cifar_test):
         data = data.to(device, non_blocking=True)
         y = y.to(device, non_blocking=True)
-        # z = fast_randn((batch_size, ze), device=device, requires_grad=True)
-        # _, _, netT = netH(z)
+        test_count += data.shape[0]
         x = netT(data)
         correct, loss = clf_performance(x, y, val=True)
 
         test_acc += correct.item()
         test_loss += loss.item()
 
-    test_loss /= len(cifar_test.dataset)
-    test_acc /= len(cifar_test.dataset)
+    test_loss /= test_count
+    test_acc /= test_count
+    return test_loss, test_acc
+
+def eval_clfs(netTs, cifar_test, *, device='cpu'):
+    netcount = len(netTs)
+    test_acc = [0.0] * netcount
+    test_loss = [0.0] * netcount
+    test_count = 0
+    for i, (data, y) in enumerate(cifar_test):
+        data = data.to(device, non_blocking=True)
+        y = y.to(device, non_blocking=True)
+        test_count += data.shape[0]
+        for i, netT in enumerate(netTs):
+            x = netT(data)
+            correct, loss = clf_performance(x, y, val=True)
+
+            test_acc[i] += correct.item()
+            test_loss[i] += loss.item()
+
+    for i in range(netcount):
+        test_loss[i] /= test_count
+        test_acc[i] /= test_count
+
     return test_loss, test_acc
 
 def make_ensemble(nets):

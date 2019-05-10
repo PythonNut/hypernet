@@ -1,5 +1,6 @@
 import argparse
 from statistics import mean
+from progressbar import progressbar
 
 from util import *
 from modules import *
@@ -37,14 +38,18 @@ def main(pt, networks, cuda):
 
     with torch.no_grad():
         print(f"Evaluating individual networks on {device}...")
-        individual_scores = [eval_clf(net, cifar_test, device=device)[1] for net in nets]
+        individual_scores = eval_clfs(nets, progressbar(cifar_test), device=device)[1]
         print(f"Evaluating ensemble on {device}...")
-        ensemble_score = eval_clf(make_ensemble(nets), cifar_test, device=device)[1]
+        ensemble_score = eval_clf(make_ensemble(nets), progressbar(cifar_test), device=device)[1]
 
+    mean_individual_score = mean(individual_scores)
 
     print(f"Ensemble acc: {ensemble_score}")
-    print(f"Individual acc: min {min(individual_scores)}, mean {mean(individual_scores)}, max {max(individual_scores)}")
+    print(f"Individual acc: min {min(individual_scores)}, mean {mean_individual_score}, max {max(individual_scores)}")
 
+    error_red = ensemble_score - mean_individual_score
+    frac_error_red = error_red/(1 - mean_individual_score)
+    print(f"Error reduction: {error_red}, fractional error reduction {frac_error_red}")
 
 
 if __name__ == '__main__':
