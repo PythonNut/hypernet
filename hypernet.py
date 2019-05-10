@@ -105,7 +105,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             netH.zero_grad()
             netD.zero_grad()
             z = fast_randn((batch_size, ze), device=device, requires_grad=True)
-            q, w, netT = netH(z)
+            q, w, netTs = netH(z)
 
             # Z Adversary
             free_params([netD])
@@ -130,12 +130,13 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
             freeze_params([netD])
             free_params([netH])
 
-            x = netT(data)
-            correct, loss = clf_performance(x, target, val=True)
-            g_loss_meter.update(loss.item())
+            for netT in netTs:
+                x = netT(data)
+                correct, loss = clf_performance(x, target, val=True)
+                g_loss_meter.update(loss.item())
 
-            # Retain graph because the generators enter the encoder multiple times
-            loss.backward(retain_graph=True)
+                # Retain graph because the generators enter the encoder multiple times
+                loss.backward(retain_graph=True)
 
             # fool the discriminator
             d_fake_loss = adversarial_loss(d_fake, label.fill_(real_label))
@@ -171,8 +172,8 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         data = data.to(device, non_blocking=True)
                         y = y.to(device, non_blocking=True)
                         z = fast_randn((batch_size, ze), device=device, requires_grad=True)
-                        _, _, netT = netH(z)
-                        x = netT(data)
+                        _, _, netTs = netH(z)
+                        x = netTs[0](data)
                         correct, loss = clf_performance(x, y, val=True)
 
                         test_acc += correct.item()

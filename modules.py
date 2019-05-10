@@ -162,6 +162,7 @@ class HyperNet(nn.Module):
             self.add_module(key, module)
 
     def forward(self, z):
+        batch_size = z.shape[0]
         z = z.view(-1, self.ze)
         q = self.encoder(z)
         q = q.view(-1, self.gen_count, self.z)
@@ -170,13 +171,17 @@ class HyperNet(nn.Module):
             for i, (key, shape) in zip(range(self.gen_count), self.shapes.items())
         )
 
-        # So the parameters aren't marked as autograd leaves
-        tnet = deepcopy(self.th.tnet)
-        freeze_params([tnet])
+        tnets = []
+        for i in range(batch_size):
+            # So the parameters aren't marked as autograd leaves
+            tnet = deepcopy(self.th.tnet)
+            freeze_params([tnet])
 
-        # Write parameters into tnet
-        # with torch.no_grad():
-        for name, param in tnet.named_parameters():
-            param.copy_(w[name].mean(0))
+            # Write parameters into tnet
+            # with torch.no_grad():
+            for name, param in tnet.named_parameters():
+                param.copy_(w[name][i])
 
-        return q, w, tnet
+            tnets.append(tnet)
+
+        return q, w, tnets
