@@ -226,7 +226,7 @@ def calc_gradient_penalty(netD, input, c=1, *, device='cpu'):
     gradients = autograd.grad(
         outputs=disc,
         inputs=input,
-        grad_outputs=torch.ones_like(disc, device=device),
+        grad_outputs=torch.ones_like(disc),
         create_graph=True,
         retain_graph=True,
         only_inputs=True
