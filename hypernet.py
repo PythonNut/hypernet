@@ -210,8 +210,13 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         if not dry:
                             torch.save(
                                 {
+                                    'n_iter': n_iter,
+                                    'epoch': epoch,
+                                    'batch_idx': batch_idx,
                                     'netH': netH.state_dict(),
-                                    'netD': netD.state_dict()
+                                    'netD': netD.state_dict(),
+                                    'optimH': optimH.state_dict(),
+                                    'optimD': optimD.state_dict()
                                 },
                                 str(model_path / 'best.pt')
                             )
