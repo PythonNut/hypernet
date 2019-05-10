@@ -85,6 +85,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
     best_test_acc, best_test_loss = MaxMeter(), MinMeter()
     g_loss_meter, d_loss_meter = AverageMeter(), AverageMeter()
     d_acc_meter = AverageMeter()
+    gp_meter = AverageMeter()
     dgrad_meter = AverageMeter()
 
     adversarial_loss = nn.BCELoss()
@@ -97,6 +98,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
         d_loss_meter.reset()
         g_loss_meter.reset()
         d_acc_meter.reset()
+        gp_meter.reset()
         dgrad_meter.reset()
         for batch_idx, (data, target) in enumerate(cifar_train):
             n_iter = epoch * minibatch_count + batch_idx
@@ -195,6 +197,7 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
                         sw.add_scalar('G/loss', g_loss_meter.avg, n_iter)
                         sw.add_scalar('D/loss', d_loss_meter.avg, n_iter)
                         sw.add_scalar('D/acc', d_acc_meter.avg, n_iter)
+                        sw.add_scalar('D/gp', gp_meter.avg, n_iter)
                         sw.add_scalar('D/gradnorm', dgrad_meter.avg, n_iter)
                         netH.eval()
                         netH_samples = [netH(fast_randn((batch_size, ze)).cuda()) for _ in range(10)]
