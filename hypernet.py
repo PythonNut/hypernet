@@ -31,11 +31,10 @@ def load_args():
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-
 def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, **kwargs):
+    tensorboard_path = Path(outdir) / 'tensorboard' / name
+    model_path = Path(outdir) / 'models' / name
     if not dry:
-        tensorboard_path = Path(outdir) / 'tensorboard' / name
-        model_path = Path(outdir) / 'models' / name
         tensorboard_path.mkdir(exist_ok=True, parents=True)
         model_path.mkdir(exist_ok=True, parents=True)
 
