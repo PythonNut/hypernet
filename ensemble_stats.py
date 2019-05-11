@@ -12,11 +12,12 @@ def load_args():
     parser.add_argument('-p', '--pt', default="test", type=str)
     parser.add_argument('-n', '--networks', default="32", type=int)
     parser.add_argument('--cuda', action="store_true")
+    parser.add_argument('--eval', action="store_true")
     args = parser.parse_args()
     return args
 
 
-def main(pt, networks, cuda):
+def main(pt, networks, cuda, eval):
     print("Constructing models...")
     netT = resnet20()
     netH = HyperNet(netT, 512, 256)
@@ -33,6 +34,9 @@ def main(pt, networks, cuda):
     if cuda:
         nets = [net.cuda() for net in nets]
 
+    if eval:
+        for net in nets:
+            net.eval()
 
     device = next(nets[0].parameters()).device
 
