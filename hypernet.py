@@ -6,7 +6,6 @@ from pathlib import Path
 
 from torch import nn
 from torch import optim
-from torch.nn import functional as F
 import torch.distributions.normal as N
 from tensorboardX import SummaryWriter
 
