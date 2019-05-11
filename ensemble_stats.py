@@ -54,6 +54,7 @@ def main(pt, networks, cuda, eval):
     error_red = ensemble_score - mean_individual_score
     frac_error_red = error_red/(1 - mean_individual_score)
     print(f"Error reduction: {error_red}, fractional error reduction {frac_error_red}")
+    return individual_scores, ensemble_score, error_red, frac_error_red
 
 
 if __name__ == '__main__':
