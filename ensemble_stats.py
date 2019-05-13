@@ -13,14 +13,17 @@ def load_args():
     parser.add_argument('-n', '--networks', default="32", type=int)
     parser.add_argument('--cuda', action="store_true")
     parser.add_argument('--eval', action="store_true")
+    parser.add_argument('--zq', default=256, type=int, help='latent space width')
+    parser.add_argument('--ze', default=512, type=int, help='encoder dimension')
     args = parser.parse_args()
     return args
 
 
-def main(pt, networks, cuda, eval):
+def main(pt, networks, cuda, eval, zq, ze):
+
     print("Constructing models...")
     netT = resnet20()
-    netH = HyperNet(netT, 512, 256)
+    netH = HyperNet(netT, ze, zq)
 
     print("Loading save file...")
     D = torch.load(pt, map_location=lambda storage, location: storage)
