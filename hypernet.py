@@ -20,6 +20,7 @@ def load_args():
     parser.add_argument('--epochs', default=200000, type=int)
     parser.add_argument('-n', '--name', default="test", type=str)
     parser.add_argument('-o', '--outdir', default=".", type=str)
+    parser.add_argument('--pretrain', default="", type=str)
     parser.add_argument('-s', '--standard', action="store_true")
     parser.add_argument('--embeddings', action="store_true")
     parser.add_argument('--dry', action="store_true")
@@ -30,7 +31,7 @@ def load_args():
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, **kwargs):
+def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, pretrain="", **kwargs):
     tensorboard_path = Path(outdir) / 'tensorboard' / name
     model_path = Path(outdir) / 'models' / name
     if not dry:
@@ -46,6 +47,16 @@ def train_gan(zq=256, ze=512, batch_size=32, outdir=".", name="tmp", dry=False, 
         final_sigmoid=True,
         batchnorm=False
     ).to(device)
+
+    if pretrain:
+        print("Loading pretrained network...")
+        pretrain = torch.load(
+            pretrain,
+            map_location=lambda storage, location: storage
+        )
+        netH.load_state_dict(pretrain['netH'])
+        netD.load_state_dict(pretrain['netD'])
+        del pretrain
 
     print(netT, netH, netD)
     print(f"netT params: {param_count(netT)}")
